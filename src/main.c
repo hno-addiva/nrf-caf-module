@@ -5,8 +5,15 @@
  */
 
 #include <zephyr/zephyr.h>
+#include <zephyr/logging/log.h>
 
+#define MODULE main
+
+LOG_MODULE_REGISTER(MODULE);
+
+#include <zephyr/drivers/hwinfo.h>
 void main(void)
 {
-	printk("Hello World! %s\n", CONFIG_BOARD);
+	LOG_INF("Starting");
+	LOG_INF("End");
 }
