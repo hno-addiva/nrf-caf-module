@@ -33,76 +33,76 @@ static struct k_work_q work_q;
 // to avoid referencing the k_work item maually.
 /*
 static struct somework_context {
-        struct k_work work;
-        ...
+	struct k_work work;
+	...
 } work1;
 
 static void somework_task(struct k_work *work)
 {
-    struct somework_context *context = CONTAINER_OF(work, struct somework_context, work);
-    LOG_DBG("somework_task");
-    ...
+	struct somework_context *context = CONTAINER_OF(work, struct somework_context, work);
+	LOG_DBG("somework_task");
+	...
 
 }
-    work_init(somework, womework_task);
+	work_init(somework, womework_task);
 
-    work_submit(somework);
+	work_submit(somework);
 
 */
 
 #define work_submit(context) \
-    k_work_submit_to_queue(&work_q, &context.work)
+	k_work_submit_to_queue(&work_q, &context.work)
 #define work_init(context, fn) \
-    k_work_init(&context.work, fn)
+	k_work_init(&context.work, fn)
 
 static struct work1_context {
-        struct k_work work;
+		struct k_work work;
 } work1;
 
 static void work1_task(struct k_work *work)
 {
-    struct work1_context __unused *context = CONTAINER_OF(work, struct work1_context, work);
-    LOG_DBG("start");
-    k_msleep(1000);
-    LOG_DBG("done");
+	struct work1_context __unused *context = CONTAINER_OF(work, struct work1_context, work);
+	LOG_DBG("start");
+	k_msleep(1000);
+	LOG_DBG("done");
  }
 
 // Timer based work to show system timer, could have just used scheduled
 //  work for delay.
 static struct minute_work_context {
-    struct k_work work;
+	struct k_work work;
 } minute_work;
 
 static void minute_work_task(struct k_work *work)
 {
-    struct minute_work_context __unused *context = CONTAINER_OF(work, struct minute_work_context, work);
-    LOG_DBG("start");
-    k_msleep(10000);
-    LOG_DBG("done");
+	struct minute_work_context __unused *context = CONTAINER_OF(work, struct minute_work_context, work);
+	LOG_DBG("start");
+	k_msleep(10000);
+	LOG_DBG("done");
  }
 
 // Timer ISR, called in interrupt context. Do as little as possible here
 static void minute_timer_isr(struct k_timer *dummy)
 {
-    work_submit(minute_work);
+	work_submit(minute_work);
 }
 
 static K_TIMER_DEFINE(minute_timer, minute_timer_isr, NULL);
 
 
 #define K_WORK_NAME(_name) \
-    &(struct k_work_queue_config){.name=_name}    
+	&(struct k_work_queue_config){.name=_name}    
 static void module_initialize(void)
 {
-    LOG_DBG("initializing");
-    k_work_queue_start(&work_q, stack_area, K_THREAD_STACK_SIZEOF(stack_area),
-                    CONFIG_SYSTEM_WORKQUEUE_PRIORITY, K_WORK_NAME("test_1"));
-                     // TODO: Assign proper priority
-    work_init(work1, work1_task);
-    work_init(minute_work, minute_work_task);
-    k_timer_start(&minute_timer, K_SECONDS(1), K_SECONDS(60));
-    module_set_state(MODULE_STATE_READY);
-    LOG_DBG("initialized");
+	LOG_DBG("initializing");
+	k_work_queue_start(&work_q, stack_area, K_THREAD_STACK_SIZEOF(stack_area),
+					CONFIG_SYSTEM_WORKQUEUE_PRIORITY, K_WORK_NAME("test_1"));
+					 // TODO: Assign proper priority
+	work_init(work1, work1_task);
+	work_init(minute_work, minute_work_task);
+	k_timer_start(&minute_timer, K_SECONDS(1), K_SECONDS(60));
+	module_set_state(MODULE_STATE_READY);
+	LOG_DBG("initialized");
 }
 
 #if CONFIG_CAF_BUTTON
@@ -111,10 +111,10 @@ static bool handle_button_event(const struct button_event *evt)
 	if (evt->pressed) {
 		switch (evt->key_id) {
 		case BUTTON_ID_...:
-            ...
+			...
 			break;
 		case BUTTON_ID_...:
-            ...
+			...
 			break;
 		default:
 			break;
@@ -127,24 +127,24 @@ static bool handle_button_event(const struct button_event *evt)
 
 static bool handle_module_state_event(const struct module_state_event *evt)
 {
-    // Wait for dependent modules to initialize
+	// Wait for dependent modules to initialize
 	if (check_state(evt, MODULE_ID(main), MODULE_STATE_READY)) {
-        // Initialize system parts
-        module_initialize();
-    }
+		// Initialize system parts
+		module_initialize();
+	}
 	return false;
 }
 
 static bool app_event_handler(const struct app_event_header *aeh)
 {
-    #if CONFIG_CAF_BUTTON
+	#if CONFIG_CAF_BUTTON
 	if (is_button_event(aeh)) {
 		return handle_button_event(cast_button_event(aeh));
 	}
-    #endif
+	#endif
 
 	if (is_module_state_event(aeh)) {
-        return handle_module_state_event(cast_module_state_event(aeh));
+		return handle_module_state_event(cast_module_state_event(aeh));
 	}
 
 	/* Event not handled but subscribed. */
@@ -165,16 +165,16 @@ APP_EVENT_SUBSCRIBE(MODULE, button_event);
 
 static int sh_echo(const struct shell *shell, size_t argc, char **argv)
 {
-    for (int i = 0; i < argc; i++) {
-	    shell_fprintf(shell, SHELL_NORMAL, "echo '%s'\n", argv[i]);    
-    }
-    return 0;
+	for (int i = 0; i < argc; i++) {
+		shell_fprintf(shell, SHELL_NORMAL, "echo '%s'\n", argv[i]);    
+	}
+	return 0;
 }
 
 static int sh_work(const struct shell *shell, size_t argc, char **argv)
 {
-    work_submit(work1);
-    return 0;
+	work_submit(work1);
+	return 0;
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(module_shell,
