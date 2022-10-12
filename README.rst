@@ -16,7 +16,8 @@ Nothing special
 Sample Output
 =============
 
-console::
+::
+
   *** Booting Zephyr OS build v3.1.99-ncs1  ***
   
   
