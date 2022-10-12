@@ -54,6 +54,8 @@ static void work1_task(struct k_work *work)
 {
     struct work1_context __unused *context = CONTAINER_OF(work, struct work1_context, work);
     LOG_DBG("work1 task");
+    k_msleep(1000);
+    LOG_DBG("work1 done");
  }
 
 // Timer based work to show system timer, could have just used scheduled
@@ -66,6 +68,10 @@ static void minute_work_task(struct k_work *work)
 {
     struct minute_work_context __unused *context = CONTAINER_OF(work, struct minute_work_context, work);
     LOG_DBG("minute work task");
+    k_msleep(10000);
+    LOG_DBG("minute work task done");
+ }
+
 // Timer ISR, called in interrupt context. Do as little as possible here
 static void minute_timer_isr(struct k_timer *dummy)
 {
