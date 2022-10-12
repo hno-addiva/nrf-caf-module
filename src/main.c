@@ -6,14 +6,19 @@
 
 #include <zephyr/zephyr.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/hwinfo.h>
 
 #define MODULE main
 
 LOG_MODULE_REGISTER(MODULE);
 
-#include <zephyr/drivers/hwinfo.h>
+uint8_t device_id[8];
+
 void main(void)
 {
 	LOG_INF("Starting");
+	hwinfo_get_device_id(device_id, sizeof(device_id));
+	LOG_HEXDUMP_INF(device_id, sizeof(device_id), "Device ID");
+
 	LOG_INF("End");
 }
