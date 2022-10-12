@@ -53,8 +53,26 @@ static struct work1_context {
 static void work1_task(struct k_work *work)
 {
     struct work1_context __unused *context = CONTAINER_OF(work, struct work1_context, work);
-    LOG_DBG("work1_task");
+    LOG_DBG("work1 task");
+ }
+
+// Timer based work to show system timer, could have just used scheduled
+//  work for delay.
+static struct minute_work_context {
+    struct k_work work;
+} minute_work;
+
+static void minute_work_task(struct k_work *work)
+{
+    struct minute_work_context __unused *context = CONTAINER_OF(work, struct minute_work_context, work);
+    LOG_DBG("minute work task");
+// Timer ISR, called in interrupt context. Do as little as possible here
+static void minute_timer_isr(struct k_timer *dummy)
+{
+    work_submit(minute_work);
 }
+
+static K_TIMER_DEFINE(minute_timer, minute_timer_isr, NULL);
 
 static void module_initialize(void)
 {
@@ -62,6 +80,8 @@ static void module_initialize(void)
     k_work_queue_start(&work_q, stack_area, K_THREAD_STACK_SIZEOF(stack_area),
                     CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL); // TODO: Assign proper priority, and what is NULL?
     work_init(work1, work1_task);
+    work_init(minute_work, minute_work_task);
+    k_timer_start(&minute_timer, K_SECONDS(1), K_SECONDS(60));
     module_set_state(MODULE_STATE_READY);
     LOG_DBG("initialized");
 }
