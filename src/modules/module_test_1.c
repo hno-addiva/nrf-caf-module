@@ -4,6 +4,15 @@
  * SPDX-License-Identifier: TBD
  */
 
+/*
+ * Dummy module with dedicated work queue for processing
+ * 
+ * - CAF handler processing incoming events from other modules (only module_ready handled for now)
+ * - Module initialization triggered from main module (main.c) signalling it's ready
+ * - Timer firing an automatic work every minute
+ * - Shell command for firing a test work on demand
+ */
+
 #include <zephyr/kernel.h>
 
 #define MODULE test_1
