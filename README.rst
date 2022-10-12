@@ -1,3 +1,22 @@
+.. _nRF CAF Module:
+
+nRF CAF Module "test_1"
+#######################
+
+Overview
+********
+
+A simple CAF module with worker thread, timer event and shell integratin
+
+Building and Running
+********************
+
+Nothing special
+
+Sample Output
+=============
+
+~~~
 *** Booting Zephyr OS build v3.1.99-ncs1  ***
 
 
@@ -52,3 +71,4 @@ uart:~$ test_1 work
 [...]
 [00:02:01.401,733] <dbg> test_1: minute_work_task: start
 [00:02:11.401,855] <dbg> test_1: minute_work_task: done
+~~~
