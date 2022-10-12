@@ -6,3 +6,13 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(hello_world)
 
 target_sources(app PRIVATE src/main.c)
+
+# CAF modules
+
+# Add include directory for board specific CAF def files
+zephyr_include_directories(
+  configuration/${BOARD}
+  configuration/default
+  )
+
+target_sources(app PRIVATE src/modules/module_test_1.c)
