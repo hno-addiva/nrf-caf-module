@@ -74,11 +74,15 @@ static void minute_timer_isr(struct k_timer *dummy)
 
 static K_TIMER_DEFINE(minute_timer, minute_timer_isr, NULL);
 
+
+#define K_WORK_NAME(_name) \
+    &(struct k_work_queue_config){.name=_name}    
 static void module_initialize(void)
 {
     LOG_DBG("initialize");
     k_work_queue_start(&work_q, stack_area, K_THREAD_STACK_SIZEOF(stack_area),
-                    CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL); // TODO: Assign proper priority, and what is NULL?
+                    CONFIG_SYSTEM_WORKQUEUE_PRIORITY, K_WORK_NAME("test_1"));
+                     // TODO: Assign proper priority
     work_init(work1, work1_task);
     work_init(minute_work, minute_work_task);
     k_timer_start(&minute_timer, K_SECONDS(1), K_SECONDS(60));
