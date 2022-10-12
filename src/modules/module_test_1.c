@@ -10,7 +10,7 @@
 #include <caf/events/module_state_event.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(MODULE);
+LOG_MODULE_REGISTER(MODULE, LOG_LEVEL_DBG);
 
 #include "module_test_1.h"
 #include "test_1_def.h"
