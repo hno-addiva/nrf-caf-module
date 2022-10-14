@@ -61,6 +61,8 @@ static struct somework_context somework = {
 	k_work_submit_to_queue(&work_q, &context.work)
 #define work_init(context, fn) \
 	k_work_init(&context.work, fn)
+#define WORK_INIT(fn) \
+	.work = Z_WORK_INITIALIZER(fn)
 
 /*
  * Basic work item
@@ -79,7 +81,7 @@ static void work1_task(struct k_work *work)
 }
 
 struct work1_context work1 = {
-	.work = Z_WORK_INITIALIZER(work1_task),
+	WORK_INIT(work1_task),
 };
 
 /*
@@ -102,7 +104,7 @@ static void minute_work_task(struct k_work *work)
 }
 
 static struct minute_work_context minute_work = {
-	.work = Z_WORK_INITIALIZER(minute_work_task),
+	WORK_INIT(minute_work_task),
 };
 
 // Timer ISR, called in interrupt context. Do as little as possible here
@@ -114,6 +116,9 @@ static void minute_timer_isr(struct k_timer *dummy)
 static K_TIMER_DEFINE(minute_timer, minute_timer_isr, NULL);
 
 
+/*
+ * CAF Module
+ */
 
 static void module_initialize(void)
 {
@@ -154,7 +159,10 @@ APP_EVENT_LISTENER(MODULE, app_event_handler);
 APP_EVENT_SUBSCRIBE(MODULE, module_state_event);
 
 
-// Shell integration
+/*
+ * Shell integration
+ */
+
 #if CONFIG_SHELL
 #include <zephyr/shell/shell.h>
 
