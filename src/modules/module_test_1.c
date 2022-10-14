@@ -129,9 +129,7 @@ static bool app_event_handler(const struct app_event_header *aeh)
 
 APP_EVENT_LISTENER(MODULE, app_event_handler);
 APP_EVENT_SUBSCRIBE(MODULE, module_state_event);
-#if CONFIG_CAF_BUTTON
-APP_EVENT_SUBSCRIBE(MODULE, button_event);
-#endif
+
 
 // Shell integration
 #if CONFIG_SHELL
