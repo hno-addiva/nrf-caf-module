@@ -149,9 +149,19 @@ static int sh_work(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+// This shows the dangers of submitting the same work more than once
+static int sh_workx3(const struct shell *shell, size_t argc, char **argv)
+{
+	work_submit(work1);
+	work_submit(work1);
+	work_submit(work1);
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(module_shell,
 	SHELL_CMD_ARG(echo, NULL, "Echo", sh_echo, 0, 0),
 	SHELL_CMD_ARG(work, NULL, "work", sh_work, 0, 0),
+	SHELL_CMD_ARG(workx3, NULL, "work x3", sh_workx3, 0, 0),
 	SHELL_SUBCMD_SET_END
 );
 
