@@ -13,15 +13,15 @@
  * - Shell command for firing a test work on demand
  */
 
-#include <zephyr/kernel.h>
 
 #define MODULE test_1
-#include <caf/events/module_state_event.h>
 
+#include <zephyr/kernel.h>
+#include <caf/events/module_state_event.h>
 #include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(MODULE, LOG_LEVEL_DBG);
 
-#include "module_test_1.h"
 #include "test_1_def.h"
 
 // Work queue
@@ -32,10 +32,11 @@ static struct k_work_q work_q;
 // this allows for other data to be passed to the work handler. Use macros below
 // to avoid referencing the k_work item maually.
 /*
-static struct somework_context {
+struct somework_context {
 	struct k_work work;
+	// Other parameters as needed
 	...
-} work1;
+} somework;
 
 static void somework_task(struct k_work *work)
 {
@@ -44,7 +45,13 @@ static void somework_task(struct k_work *work)
 	...
 
 }
-	work_init(somework, womework_task);
+
+static struct somework_context somework = {
+	.work = Z_WORK_INITIALIZER(some_task),
+	// Other static initializations if needed
+};
+
+	work_init(somework, somework_task);
 
 	work_submit(somework);
 
@@ -55,9 +62,13 @@ static void somework_task(struct k_work *work)
 #define work_init(context, fn) \
 	k_work_init(&context.work, fn)
 
-static struct work1_context {
+/*
+ * Basic work item
+ */
+
+struct work1_context {
 		struct k_work work;
-} work1;
+};
 
 static void work1_task(struct k_work *work)
 {
@@ -65,13 +76,22 @@ static void work1_task(struct k_work *work)
 	LOG_DBG("start");
 	k_msleep(1000);
 	LOG_DBG("done");
- }
+}
 
-// Timer based work to show system timer, could have just used scheduled
-//  work for delay.
-static struct minute_work_context {
+struct work1_context work1 = {
+	.work = Z_WORK_INITIALIZER(work1_task),
+};
+
+/*
+ * Timer based work to show system timer
+ * 
+ * could have just used scheduled work for delay.
+ */
+
+struct minute_work_context {
 	struct k_work work;
-} minute_work;
+	// Other parameters as needed
+};
 
 static void minute_work_task(struct k_work *work)
 {
@@ -79,7 +99,11 @@ static void minute_work_task(struct k_work *work)
 	LOG_DBG("start");
 	k_msleep(10000);
 	LOG_DBG("done");
- }
+}
+
+static struct minute_work_context minute_work = {
+	.work = Z_WORK_INITIALIZER(minute_work_task),
+};
 
 // Timer ISR, called in interrupt context. Do as little as possible here
 static void minute_timer_isr(struct k_timer *dummy)
@@ -90,16 +114,15 @@ static void minute_timer_isr(struct k_timer *dummy)
 static K_TIMER_DEFINE(minute_timer, minute_timer_isr, NULL);
 
 
-#define K_WORK_NAME(_name) \
-	&(struct k_work_queue_config){.name=_name}    
+
 static void module_initialize(void)
 {
 	LOG_DBG("initializing");
+	#define K_WORK_NAME(_name) \
+		&(struct k_work_queue_config){.name=_name}
 	k_work_queue_start(&work_q, stack_area, K_THREAD_STACK_SIZEOF(stack_area),
 					CONFIG_SYSTEM_WORKQUEUE_PRIORITY, K_WORK_NAME("test_1"));
-					 // TODO: Assign proper priority
-	work_init(work1, work1_task);
-	work_init(minute_work, minute_work_task);
+					 // TODO: Assign proper thread priority
 	k_timer_start(&minute_timer, K_SECONDS(1), K_SECONDS(60));
 	module_set_state(MODULE_STATE_READY);
 	LOG_DBG("initialized");
