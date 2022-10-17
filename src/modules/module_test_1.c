@@ -24,6 +24,9 @@ LOG_MODULE_REGISTER(MODULE, LOG_LEVEL_DBG);
 
 #include "test_1_def.h"
 
+// Configurable parameters
+static int foo = 0;
+
 // Work queue
 static K_THREAD_STACK_DEFINE(stack_area, 2048);
 static struct k_work_q work_q;
@@ -189,10 +192,18 @@ static int sh_workx3(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int sh_foo(const struct shell *shell, size_t argc, char **argv)
+{
+	// Show current setting of foo
+	shell_fprintf(shell, SHELL_NORMAL, "foo = %d\n", foo);
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(module_shell,
 	SHELL_CMD_ARG(echo, NULL, "Echo", sh_echo, 0, 0),
 	SHELL_CMD_ARG(work, NULL, "work", sh_work, 0, 0),
 	SHELL_CMD_ARG(workx3, NULL, "work x3", sh_workx3, 0, 0),
+	SHELL_CMD_ARG(foo, NULL, "Foo", sh_foo, 0, 0),
 	SHELL_SUBCMD_SET_END
 );
 
