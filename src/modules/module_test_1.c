@@ -126,10 +126,10 @@ static K_TIMER_DEFINE(minute_timer, minute_timer_isr, NULL);
 static void module_initialize(void)
 {
 	LOG_DBG("initializing");
-	#define K_WORK_NAME(_name) \
-		&(struct k_work_queue_config){.name=_name}
+	#define K_WORK_MODULE_NAME \
+		&(struct k_work_queue_config){.name=STRINGIFY(MODULE)}
 	k_work_queue_start(&work_q, stack_area, K_THREAD_STACK_SIZEOF(stack_area),
-					CONFIG_SYSTEM_WORKQUEUE_PRIORITY, K_WORK_NAME("test_1"));
+					CONFIG_SYSTEM_WORKQUEUE_PRIORITY, K_WORK_MODULE_NAME);
 					 // TODO: Assign proper thread priority
 	k_timer_start(&minute_timer, K_SECONDS(1), K_SECONDS(60));
 	module_set_state(MODULE_STATE_READY);
