@@ -11,6 +11,7 @@
  * - Module initialization triggered from main module (main.c) signalling it's ready
  * - Timer firing an automatic work every minute
  * - Shell command for firing a test work on demand
+ * - Settings subsys
  */
 
 
@@ -19,6 +20,7 @@
 #include <zephyr/kernel.h>
 #include <caf/events/module_state_event.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/settings/settings.h>
 
 LOG_MODULE_REGISTER(MODULE, LOG_LEVEL_DBG);
 
@@ -126,6 +128,37 @@ static void minute_timer_isr(struct k_timer *dummy)
 
 static K_TIMER_DEFINE(minute_timer, minute_timer_isr, NULL);
 
+
+/*
+ * Settings
+ */
+
+static int m_settings_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
+{
+	const char *next;
+	LOG_DBG("set %s", name);
+	if (settings_name_steq(name, "foo", &next) && !next) {
+		int rc = read_cb(cb_arg, &foo, sizeof(foo));
+		LOG_INF("setting foo = %d (%d)", foo, rc);
+		return 0;
+	}
+	return -1;
+}
+
+int m_settings_commit(void)
+{
+	// Warning: Initial commit is early during startup while main is initializing.
+	if (module_state == M_STATE_UNINITIALIZED)
+		return 0;
+
+	LOG_INF("Settings committed");
+	// Do what is needed to apply/activate new settings
+	return -1;
+}
+
+// _get is for runtime settings. Not used (NULL)
+// _export is for settings_save() of runtime settings. Not used (NULL)
+SETTINGS_STATIC_HANDLER_DEFINE(MODULE, STRINGIFY(MODULE), NULL, m_settings_set, m_settings_commit, NULL);
 
 /*
  * CAF Module
