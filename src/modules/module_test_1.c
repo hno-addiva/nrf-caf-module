@@ -24,6 +24,14 @@ LOG_MODULE_REGISTER(MODULE, LOG_LEVEL_DBG);
 
 #include "test_1_def.h"
 
+// Module state
+enum {
+	M_STATE_UNINITIALIZED = 0,
+	M_STATE_READY
+} module_state = {
+	M_STATE_UNINITIALIZED
+};
+
 // Configurable parameters
 static int foo = 0;
 
@@ -132,6 +140,7 @@ static void module_initialize(void)
 					CONFIG_SYSTEM_WORKQUEUE_PRIORITY, K_WORK_MODULE_NAME);
 					 // TODO: Assign proper thread priority
 	k_timer_start(&minute_timer, K_SECONDS(1), K_SECONDS(60));
+	module_state = M_STATE_READY;
 	module_set_state(MODULE_STATE_READY);
 	LOG_DBG("initialized");
 }
