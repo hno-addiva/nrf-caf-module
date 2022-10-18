@@ -197,15 +197,28 @@ static K_TIMER_DEFINE(minute_timer, minute_timer_isr, NULL);
  * Settings
  */
 
-static int m_settings_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
+// Wrapper function with common processing per setting, used by SETTINGS macros below
+static int get_setting(const char *name, const char *key, void *data, int len, settings_read_cb read_cb, void *cb_arg)
 {
 	const char *next;
-	LOG_DBG("set %s", name);
-	if (settings_name_steq(name, "foo", &next) && !next) {
-		int rc = read_cb(cb_arg, &foo, sizeof(foo));
-		LOG_INF("setting foo = %d (%d)", foo, rc);
+	if (settings_name_steq(name, key, &next) && !next) {
+		(void)read_cb(cb_arg, data, len);
+		LOG_HEXDUMP_INF(data, len, name);
 		return 0;
 	}
+	return -1;
+}
+
+// Store setting TO dst variable
+#define SETTING_TO(setting, dst) (get_setting(name, STRINGIFY(setting), &dst, sizeof(dst), read_cb, cb_arg) == 0)
+// Store setting to variable by with same name
+#define SETTING(setting) SETTING_TO(setting, setting)
+
+static int m_settings_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
+{
+	LOG_DBG("%s", name);
+	if (SETTING(foo))
+		return 0;
 	return -1;
 }
 
