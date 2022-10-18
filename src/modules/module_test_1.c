@@ -44,7 +44,8 @@ static struct k_work_q work_q;
 // Every work item should have a context struct, where k_work work is a member.
 // this allows for other data to be passed to the work handler. Use macros below
 // to avoid referencing the k_work item maually.
-/*
+
+/**** Standard work items run "now"
 
 // Declare the local context for the work with a and struct k_work work member, and preferably with _context suffix, 
 struct somework_context {
@@ -67,15 +68,15 @@ static struct somework_context somework = {
 	// Other static initializations if needed
 };
 
-    // Schedule work, can be called in any function
-	work_submit(somework);
+    // Submit work for execution, can be called in any function
+	work_submit(&somework);
 
 */
 
-#define work_submit(name) \
-	k_work_submit_to_queue(&work_q, &name.work)
-#define work_init(name, fn) \
-	k_work_init(&name.work, fn)
+#define work_submit(ctxptr) \
+	k_work_submit_to_queue(&work_q, &(ctxptr)->work)
+#define work_init(ctxptr, fn) \
+	k_work_init(&(ctxptr)->work, fn)
 #define WORK_INIT(fn) \
 	.work = Z_WORK_INITIALIZER(fn)
 
@@ -125,11 +126,10 @@ static struct minute_work_context minute_work = {
 // Timer ISR, called in interrupt context. Do as little as possible here
 static void minute_timer_isr(struct k_timer *dummy)
 {
-	work_submit(minute_work);
+	work_submit(&minute_work);
 }
 
 static K_TIMER_DEFINE(minute_timer, minute_timer_isr, NULL);
-
 
 /*
  * Settings
@@ -174,7 +174,7 @@ static void module_initialize(void)
 	k_work_queue_start(&work_q, stack_area, K_THREAD_STACK_SIZEOF(stack_area),
 					CONFIG_SYSTEM_WORKQUEUE_PRIORITY, K_WORK_MODULE_NAME);
 					 // TODO: Assign proper thread priority
-	k_timer_start(&minute_timer, K_SECONDS(1), K_SECONDS(60));
+	k_timer_start(&minute_timer, K_SECONDS(10), K_SECONDS(60));
 	module_state = M_STATE_READY;
 	module_set_state(MODULE_STATE_READY);
 	LOG_DBG("initialized");
@@ -223,16 +223,16 @@ static int sh_echo(const struct shell *shell, size_t argc, char **argv)
 
 static int sh_work(const struct shell *shell, size_t argc, char **argv)
 {
-	work_submit(work1);
+	work_submit(&work1);
 	return 0;
 }
 
 // This shows the dangers of submitting the same work more than once
 static int sh_workx3(const struct shell *shell, size_t argc, char **argv)
 {
-	work_submit(work1);
-	work_submit(work1);
-	work_submit(work1);
+	work_submit(&work1);
+	work_submit(&work1);
+	work_submit(&work1);
 	return 0;
 }
 
