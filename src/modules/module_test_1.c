@@ -45,35 +45,37 @@ static struct k_work_q work_q;
 // this allows for other data to be passed to the work handler. Use macros below
 // to avoid referencing the k_work item maually.
 /*
+
+// Declare the local context for the work with a and struct k_work work member, and preferably with _context suffix, 
 struct somework_context {
 	struct k_work work;
 	// Other parameters as needed
 	...
-} somework;
+};
 
+// Define the function handling the work, preferably with _task suffix
 static void somework_task(struct k_work *work)
 {
 	struct somework_context *context = CONTAINER_OF(work, struct somework_context, work);
 	LOG_DBG("somework_task");
 	...
-
 }
 
+// Define individual work items for the work task, with unique names.
 static struct somework_context somework = {
-	.work = Z_WORK_INITIALIZER(some_task),
+	WORK_INIT(somework_task),
 	// Other static initializations if needed
 };
 
-	work_init(somework, somework_task);
-
+    // Schedule work, can be called in any function
 	work_submit(somework);
 
 */
 
-#define work_submit(context) \
-	k_work_submit_to_queue(&work_q, &context.work)
-#define work_init(context, fn) \
-	k_work_init(&context.work, fn)
+#define work_submit(name) \
+	k_work_submit_to_queue(&work_q, &name.work)
+#define work_init(name, fn) \
+	k_work_init(&name.work, fn)
 #define WORK_INIT(fn) \
 	.work = Z_WORK_INITIALIZER(fn)
 
