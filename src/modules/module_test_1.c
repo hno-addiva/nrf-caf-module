@@ -80,6 +80,43 @@ static struct somework_context somework = {
 #define WORK_INIT(fn) \
 	.work = Z_WORK_INITIALIZER(fn)
 
+
+/**** Delayed work items run "later"
+
+// Declare the local context for the work with a and struct k_work_delayable work member, and preferably with _context suffix, 
+struct somework_context {
+	struct k_work_delayable work;
+	// Other parameters as needed
+	...
+};
+
+// Define the function handling the work, preferably with _task suffix
+static void somework_task(struct k_work *_work)
+{
+	struct k_work_delayable *work = k_work_delayable_from_work(_work);
+	struct somework_context *context = CONTAINER_OF(work, struct somework_context, work);
+	LOG_DBG("somework_task");
+	...
+}
+
+// Define individual work items for the work task, with unique names.
+static struct somework_context somework = {
+	WORK_DELAYABLE_INIT(somework_task),
+	// Other static initializations if needed
+};
+
+    // Submit work for execution, can be called in any function
+	work_schedule(&somework, delay);
+
+*/
+
+#define work_schedule(ctxptr, delay) \
+	k_work_schedule_for_queue(&work_q, &(ctxptr)->work, delay)
+#define work_delayable_init(ctxptr, fn) \
+	k_work_init_delayable(&(ctxptr)->work, fn)
+#define WORK_DELAYABLE_INIT(fn) \
+	.work = Z_WORK_DELAYABLE_INITIALIZER(fn)
+
 /*
  * Basic work item
  */
@@ -101,9 +138,34 @@ struct work1_context work1 = {
 };
 
 /*
- * Timer based work to show system timer
- * 
- * could have just used scheduled work for delay.
+ * Background scheduled work
+ */
+
+struct background_work_context {
+	struct k_work_delayable work;
+	// Other parameters as needed
+};
+
+static void background_work_task(struct k_work *_work)
+{
+	struct k_work_delayable *work = k_work_delayable_from_work(_work);
+	struct background_work_context __unused *context = CONTAINER_OF(work, struct background_work_context, work);
+	LOG_DBG("start");
+
+	// Do what should be done
+
+	LOG_DBG("done");
+	// Reschedule
+	work_schedule(context, K_SECONDS(30));
+}
+
+struct background_work_context background_work = {
+	WORK_DELAYABLE_INIT(background_work_task),
+	// Other parameters as needed
+};
+
+/*
+ * System timer triggered work
  */
 
 struct minute_work_context {
@@ -176,6 +238,7 @@ static void module_initialize(void)
 					 // TODO: Assign proper thread priority
 	k_timer_start(&minute_timer, K_SECONDS(10), K_SECONDS(60));
 	module_state = M_STATE_READY;
+	work_schedule(&background_work, K_SECONDS(5));
 	module_set_state(MODULE_STATE_READY);
 	LOG_DBG("initialized");
 }
