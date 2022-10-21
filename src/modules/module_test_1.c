@@ -64,7 +64,7 @@ static void somework_task(struct k_work *work)
 
 // Define individual work items for the work task, with unique names.
 static struct somework_context somework = {
-	WORK_INIT(somework_task),
+	.work = Z_WORK_INITIALIZER(somework_task),
 	// Other static initializations if needed
 };
 
@@ -77,9 +77,6 @@ static struct somework_context somework = {
 	k_work_submit_to_queue(&work_q, &(ctxptr)->work)
 #define work_init(ctxptr, fn) \
 	k_work_init(&(ctxptr)->work, fn)
-#define WORK_INIT(fn) \
-	.work = Z_WORK_INITIALIZER(fn)
-
 
 /**** Delayed work items run "later"
 
@@ -101,7 +98,7 @@ static void somework_task(struct k_work *_work)
 
 // Define individual work items for the work task, with unique names.
 static struct somework_context somework = {
-	WORK_DELAYABLE_INIT(somework_task),
+	.work = Z_WORK_DELAYABLE_INITIALIZER(somework_task),
 	// Other static initializations if needed
 };
 
@@ -114,8 +111,6 @@ static struct somework_context somework = {
 	k_work_schedule_for_queue(&work_q, &(ctxptr)->work, delay)
 #define work_delayable_init(ctxptr, fn) \
 	k_work_init_delayable(&(ctxptr)->work, fn)
-#define WORK_DELAYABLE_INIT(fn) \
-	.work = Z_WORK_DELAYABLE_INITIALIZER(fn)
 
 /*
  * Basic work item
@@ -134,7 +129,7 @@ static void work1_task(struct k_work *work)
 }
 
 struct work1_context work1 = {
-	WORK_INIT(work1_task),
+	.work = Z_WORK_INITIALIZER(work1_task),
 };
 
 /*
@@ -160,7 +155,7 @@ static void background_work_task(struct k_work *_work)
 }
 
 struct background_work_context background_work = {
-	WORK_DELAYABLE_INIT(background_work_task),
+	.work = Z_WORK_DELAYABLE_INITIALIZER(background_work_task),
 	// Other parameters as needed
 };
 
@@ -182,7 +177,7 @@ static void minute_work_task(struct k_work *work)
 }
 
 static struct minute_work_context minute_work = {
-	WORK_INIT(minute_work_task),
+	.work = Z_WORK_INITIALIZER(minute_work_task),
 };
 
 // Timer ISR, called in interrupt context. Do as little as possible here
