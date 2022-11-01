@@ -49,7 +49,7 @@ static struct k_work_q work_q;
 
 // Declare the local context for the work with a and struct k_work work member, and preferably with _context suffix, 
 struct somework_context {
-	struct k_work work;
+	struct work work;
 	// Other parameters as needed
 	...
 };
@@ -64,7 +64,7 @@ static void somework_task(struct k_work *work)
 
 // Define individual work items for the work task, with unique names.
 static struct somework_context somework = {
-	.work = Z_WORK_INITIALIZER(somework_task),
+	.work = WORK_INIT(somework, somework_task),
 	// Other static initializations if needed
 };
 
@@ -73,32 +73,39 @@ static struct somework_context somework = {
 
 */
 
+struct work {
+	struct k_work work;
+};
 #define work_submit(ctxptr) \
-	k_work_submit_to_queue(&work_q, &(ctxptr)->work)
+	k_work_submit_to_queue(&work_q, &(ctxptr)->work.work)
 #define work_init(ctxptr, fn) \
-	k_work_init(&(ctxptr)->work, fn)
+	k_work_init(&(ctxptr)->work.work, fn)
+#define WORK_INIT(self, fn) { \
+	.work = Z_WORK_INITIALIZER(fn), \
+}
+#define WORK_CTX(kwork, type) \
+	CONTAINER_OF(kwork, type, work.work)
 
 /**** Delayed work items run "later"
 
-// Declare the local context for the work with a and struct k_work_delayable work member, and preferably with _context suffix, 
+// Declare the local context for the work with a and struct dwork work member, and preferably with _context suffix on the type,
 struct somework_context {
-	struct k_work_delayable work;
+	struct dwork work;
 	// Other parameters as needed
 	...
 };
 
 // Define the function handling the work, preferably with _task suffix
-static void somework_task(struct k_work *_work)
+static void somework_task(struct k_work *kwork)
 {
-	struct k_work_delayable *work = k_work_delayable_from_work(_work);
-	struct somework_context *context = CONTAINER_OF(work, struct somework_context, work);
+	struct somework_context *context = DWORK_CTX(kwork, struct somework_context);
 	LOG_DBG("somework_task");
 	...
 }
 
 // Define individual work items for the work task, with unique names.
 static struct somework_context somework = {
-	.work = Z_WORK_DELAYABLE_INITIALIZER(somework_task),
+	.work = DWORK_INIT(somework, somework_task),
 	// Other static initializations if needed
 };
 
@@ -107,29 +114,39 @@ static struct somework_context somework = {
 
 */
 
-#define work_schedule(ctxptr, delay) \
-	k_work_schedule_for_queue(&work_q, &(ctxptr)->work, delay)
-#define work_delayable_init(ctxptr, fn) \
-	k_work_init_delayable(&(ctxptr)->work, fn)
+struct dwork {
+	struct k_work_delayable work;
+};
+#define dwork_schedule(ctxptr, delay) \
+	k_work_schedule_for_queue(&work_q, &(ctxptr)->work.work, delay)
+#define dwork_init(ctxptr, fn) \
+	k_work_init_delayable(&(ctxptr)->work.work, fn)
+#define DWORK_INIT(self, fn) { \
+	.work = Z_WORK_DELAYABLE_INITIALIZER(fn), \
+}
+#define DWORK_CTX(kwork, type) \
+	WORK_CTX(k_work_delayable_from_work(kwork), type)
+#define work_schedule(work, when) dwork_schedule(work, when)
 
 /*
  * Basic work item
  */
 
 struct work1_context {
-		struct k_work work;
+		struct work work;
+		// No actual work data in this silly sample
 };
 
-static void work1_task(struct k_work *work)
+static void work1_task(struct k_work *kwork)
 {
-	struct work1_context __unused *context = CONTAINER_OF(work, struct work1_context, work);
+	struct work1_context __unused *context = WORK_CTX(kwork, struct work1_context);
 	LOG_DBG("start");
 	k_msleep(1000);
 	LOG_DBG("done");
 }
 
 struct work1_context work1 = {
-	.work = Z_WORK_INITIALIZER(work1_task),
+	.work = WORK_INIT(work1, work1_task),
 };
 
 /*
@@ -137,14 +154,13 @@ struct work1_context work1 = {
  */
 
 struct background_work_context {
-	struct k_work_delayable work;
+	struct dwork work;
 	// Other parameters as needed
 };
 
-static void background_work_task(struct k_work *_work)
+static void background_work_task(struct k_work *kwork)
 {
-	struct k_work_delayable *work = k_work_delayable_from_work(_work);
-	struct background_work_context __unused *context = CONTAINER_OF(work, struct background_work_context, work);
+	struct background_work_context __unused *context = DWORK_CTX(kwork, struct background_work_context);
 	LOG_DBG("start");
 
 	// Do what should be done
@@ -155,7 +171,7 @@ static void background_work_task(struct k_work *_work)
 }
 
 struct background_work_context background_work = {
-	.work = Z_WORK_DELAYABLE_INITIALIZER(background_work_task),
+	.work = DWORK_INIT(background_work, background_work_task),
 	// Other parameters as needed
 };
 
@@ -164,20 +180,20 @@ struct background_work_context background_work = {
  */
 
 struct minute_work_context {
-	struct k_work work;
+	struct work work;
 	// Other parameters as needed
 };
 
 static void minute_work_task(struct k_work *work)
 {
-	struct minute_work_context __unused *context = CONTAINER_OF(work, struct minute_work_context, work);
+	struct minute_work_context __unused *context = WORK_CTX(work, struct minute_work_context);
 	LOG_DBG("start");
 	k_msleep(10000);
 	LOG_DBG("done");
 }
 
 static struct minute_work_context minute_work = {
-	.work = Z_WORK_INITIALIZER(minute_work_task),
+	.work = WORK_INIT(minute_work, minute_work_task),
 };
 
 // Timer ISR, called in interrupt context. Do as little as possible here
