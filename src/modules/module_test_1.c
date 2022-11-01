@@ -75,20 +75,38 @@ static struct somework_context somework = {
 
 struct work {
 	struct k_work work;
+	struct k_sem done;
 };
+static inline void _work_submit(struct work *work) {
+	if (k_sem_take(&work->done, K_NO_WAIT) == 0) {
+		LOG_WRN("Done state discarded");
+	};
+	k_work_submit_to_queue(&work_q, &work->work);
+}
 #define work_submit(ctxptr) \
-	k_work_submit_to_queue(&work_q, &(ctxptr)->work.work)
+	_work_submit(&(ctxptr)->work)
+static inline void _work_init(struct work *work, k_work_handler_t fn) {
+	k_work_init(&work->work, fn); \
+	k_sem_init(&work->done, 0, 1);
+}
 #define work_init(ctxptr, fn) \
-	k_work_init(&(ctxptr)->work.work, fn)
+	_work_init(&(ctxptr)->work, fn)
+#define work_done(ctxptr) \
+	k_sem_give(&(ctxptr)->work.done)
 #define WORK_INIT(self, fn) { \
 	.work = Z_WORK_INITIALIZER(fn), \
+	.done = Z_SEM_INITIALIZER(self.work.done, 0, 1), \
 }
+#define work_wait(ctxptr, timeout) \
+	k_sem_take(&(ctxptr)->work.done, timeout)
+#define is_work_completed(ctxptr) \
+	(work_wait(ctxptr, K_NO_WAIT) == 0)
 #define WORK_CTX(kwork, type) \
 	CONTAINER_OF(kwork, type, work.work)
 
 /**** Delayed work items run "later"
 
-// Declare the local context for the work with a and struct dwork work member, and preferably with _context suffix on the type,
+// Declare the local context for the work with a and struct dwork work member, and preferably with _context suffix on the type, 
 struct somework_context {
 	struct dwork work;
 	// Other parameters as needed
@@ -112,20 +130,40 @@ static struct somework_context somework = {
     // Submit work for execution, can be called in any function
 	work_schedule(&somework, delay);
 
+	// Wait for completeion
+	work_wait(&somework);
+	or
+	if (work_completed(&somework)) {
+		...
+	}
 */
 
 struct dwork {
 	struct k_work_delayable work;
+	struct k_sem done;
 };
+static inline void _dwork_schedule(struct dwork *work, k_timeout_t delay) {
+	if (k_sem_take(&work->done, K_NO_WAIT) == 0) { 	// Reset semaphore
+		LOG_WRN("Done state discarded");
+	}
+	k_work_schedule_for_queue(&work_q, &work->work, delay);
+}
 #define dwork_schedule(ctxptr, delay) \
-	k_work_schedule_for_queue(&work_q, &(ctxptr)->work.work, delay)
+	_dwork_schedule(&(ctxptr)->work, delay)
+static inline void _dwork_init(struct dwork *work, k_work_handler_t fn) {
+	k_work_init_delayable(&work->work, fn); \
+	k_sem_init(&work->done, 0, 1);
+}
 #define dwork_init(ctxptr, fn) \
-	k_work_init_delayable(&(ctxptr)->work.work, fn)
+	_dwork_init(&(ctxptr)->work, fn)
 #define DWORK_INIT(self, fn) { \
 	.work = Z_WORK_DELAYABLE_INITIALIZER(fn), \
+	.done = Z_SEM_INITIALIZER(self.work.done, 0, 1), \
 }
 #define DWORK_CTX(kwork, type) \
 	WORK_CTX(k_work_delayable_from_work(kwork), type)
+#define dwork_wait(work) work_wait(work)
+#define dwork_done(work) work_done(work)
 #define work_schedule(work, when) dwork_schedule(work, when)
 
 /*
@@ -139,10 +177,11 @@ struct work1_context {
 
 static void work1_task(struct k_work *kwork)
 {
-	struct work1_context __unused *context = WORK_CTX(kwork, struct work1_context);
+	struct work1_context *context = WORK_CTX(kwork, struct work1_context);
 	LOG_DBG("start");
 	k_msleep(1000);
 	LOG_DBG("done");
+	work_done(context);
 }
 
 struct work1_context work1 = {
@@ -190,6 +229,7 @@ static void minute_work_task(struct k_work *work)
 	LOG_DBG("start");
 	k_msleep(10000);
 	LOG_DBG("done");
+	// work_done(context); // No one listens for done events
 }
 
 static struct minute_work_context minute_work = {
@@ -311,6 +351,7 @@ static int sh_echo(const struct shell *shell, size_t argc, char **argv)
 static int sh_work(const struct shell *shell, size_t argc, char **argv)
 {
 	work_submit(&work1);
+	work_wait(&work1, K_FOREVER);
 	return 0;
 }
 
